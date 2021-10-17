@@ -31,7 +31,9 @@ namespace JSettings {
             const std::string_view tableName,
             const ParamsMap_t& defaults
         ) {
-            if (!tableExists(tableName)) {
+            if (tableExists(tableName)) {
+                updateTableIfNeeded(tableName, defaults);
+            } else {
                 createNewTable(tableName, defaults);
             }
         }
@@ -103,6 +105,34 @@ namespace JSettings {
                 sqlite3_free(lastErrorMsg_);
                 lastErrorMsg_ = nullptr;
                 throw std::domain_error(error.str());
+            }
+        }
+
+        void updateTableIfNeeded(const std::string_view tableName, const ParamsMap_t& defaults) {
+            std::unordered_map<std::string, ParamEntity> entitiesForUpdate;
+            auto caller = [](auto& obj) {
+                return ParamTypeConverter::toParamEntity(obj);
+            };
+            for (const auto param : defaults) {
+                entitiesForUpdate[param.first] = std::visit(caller, param.second);
+            }
+
+            auto persistentEntities = readAll(tableName);
+            auto paramsInPersistentIter = persistentEntities.begin();
+            while (paramsInPersistentIter != persistentEntities.end()) {
+                if (entitiesForUpdate.contains(paramsInPersistentIter->name)) {
+                    if (entitiesForUpdate[paramsInPersistentIter->name].defaultValue == paramsInPersistentIter->defaultValue) {
+                        entitiesForUpdate.erase(paramsInPersistentIter->name);
+                    }
+                } else {
+                    // Some parameters may be removed from a newer version of default parameters
+                    dao_.remove(tableName, paramsInPersistentIter->name);
+                }
+                paramsInPersistentIter++;
+            }
+
+            for (const auto entity : entitiesForUpdate) {
+                dao_.createOrUpdateDefaultValue(tableName, entity.second);
             }
         }
 

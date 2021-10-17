@@ -90,7 +90,26 @@ namespace JSettings {
             }
         }
 
-        void remove(const std::string tableName, const std::string_view name) {
+        void createOrUpdateDefaultValue(const std::string_view tableName, const ParamEntity& param) {
+            std::stringstream operation;
+            operation << "INSERT INTO " << tableName <<
+            " (ID, NAME, TYPE, DFLT) VALUES ("
+            << param.id << ", "
+            << "\'" << param.name << "\', "
+            << "\'" << param.type << "\', "
+            << "\'" << param.defaultValue << "\') "
+            << "ON CONFLICT(ID) DO UPDATE SET DFLT=excluded.DFLT;";
+            int rc = sqlite3_exec(database_, operation.str().c_str(), nullptr, nullptr, &lastErrorMsg_);
+            if (rc != SQLITE_OK) {
+                const std::string errorMsg = "Failed to update default value of entry: "
+                + param.name + ", " + lastErrorMsg_;
+                sqlite3_free(lastErrorMsg_);
+                lastErrorMsg_ = nullptr;
+                throw std::domain_error(errorMsg);
+            }
+        }
+
+        void remove(const std::string_view tableName, const std::string_view name) {
             std::stringstream operation;
             operation << "DELETE FROM " << tableName << " WHERE NAME = \'" << name << "\'";
             int rc = sqlite3_exec(database_, operation.str().c_str(), nullptr, nullptr, &lastErrorMsg_);

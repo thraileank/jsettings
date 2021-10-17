@@ -21,7 +21,7 @@ target_link_libraries(
 	jsettings
 	PRIVATE Threads::Threads
 	PRIVATE sqlite3
-	${CMAKE_DL_LIBS}
+#	${CMAKE_DL_LIBS}
 )
 
 # Tests
