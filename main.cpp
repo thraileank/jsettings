@@ -1,7 +1,7 @@
 #include <iostream>
 
-#include "./table/Table.hpp"
-#include "./table/TableDefaults.hpp"
+#include "Table.hpp"
+#include "table/TableDefaults.hpp"
 
 int main() {
 	

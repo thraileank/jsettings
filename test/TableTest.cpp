@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include "../table/Table.hpp"
+#include "Table.hpp"
 #include "../table/persistent/sqlite/SQLitePersistentTable.hpp"
 
 using namespace JSettings;

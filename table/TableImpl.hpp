@@ -19,10 +19,10 @@ namespace JSettings {
      * with a respect to priority of sources values came from.
      * Performs synchronization between in-memory and persistent tables
      */
-    class Table {
+    class TableImpl {
     public:
-        Table() = default;
-        Table(PersistentTable* config) : persistentConfiguration_(config) {};
+        TableImpl() = default;
+        TableImpl(PersistentTable* config) : persistentConfiguration_(config) {};
 
         void init() {
             parameters_ = persistentConfiguration_->readAll();

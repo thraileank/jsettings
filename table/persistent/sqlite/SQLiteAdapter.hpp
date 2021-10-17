@@ -2,9 +2,9 @@
 
 #include <list>
 
-#include "../../../3rdparty/sqlite3/sqlite3.h"
+#include "sqlite3/sqlite3.h"
 
-#include "../ParamTypeConverter.hpp"
+#include "table/persistent/ParamTypeConverter.hpp"
 #include "SQLiteDAO.hpp"
 
 namespace JSettings {
