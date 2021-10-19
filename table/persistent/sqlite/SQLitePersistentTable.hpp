@@ -10,7 +10,7 @@ namespace JSettings {
     public:
         SQLitePersistentTable() : database_("parameters.db") {
             database_.open();
-            database_.createTableIfNotExists("PARAMETERS", DEFAULT_PARAMETERS);
+            database_.createOrUpdateTable("PARAMETERS", DEFAULT_PARAMETERS);
         }
 
         SQLitePersistentTable(
@@ -19,7 +19,7 @@ namespace JSettings {
             const ParamsMap_t defaults
         ) : database_(databasePath) {
             database_.open();
-            database_.createTableIfNotExists(defaultTableName, defaults);
+            database_.createOrUpdateTable(defaultTableName, defaults);
         }
 
         ~SQLitePersistentTable() {}

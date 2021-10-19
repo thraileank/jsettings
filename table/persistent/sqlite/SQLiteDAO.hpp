@@ -90,7 +90,7 @@ namespace JSettings {
             }
         }
 
-        void createOrUpdateDefaultValue(const std::string_view tableName, const ParamEntity& param) {
+        void createEntryOrUpdateDefaultValue(const std::string_view tableName, const ParamEntity& param) {
             std::stringstream operation;
             operation << "INSERT INTO " << tableName <<
             " (ID, NAME, TYPE, DFLT) VALUES ("

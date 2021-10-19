@@ -16,6 +16,8 @@ namespace JSettings {
     public:
         Param() = default;
 
+        Param(std::string_view name, ValueTypes type, const T& defaultValue) : Param(-1, name, type, defaultValue) {};
+
         Param(int id, std::string_view name, ValueTypes type, const T& defaultValue)
             : id_(id)
             , name_(name)

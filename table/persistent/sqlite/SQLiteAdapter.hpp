@@ -9,6 +9,9 @@
 
 namespace JSettings {
     using ParamsMap_t = std::unordered_map<std::string, ParamVariant_t>;
+
+    constexpr int FIRST_PARAM_ID = 1;
+
     class SQLiteAdapter {
     public:
         SQLiteAdapter() : databasePath_("parameters.db") {};
@@ -27,14 +30,14 @@ namespace JSettings {
             }
         }
 
-        void createTableIfNotExists(
+        void createOrUpdateTable(
             const std::string_view tableName,
             const ParamsMap_t& defaults
         ) {
             if (tableExists(tableName)) {
                 updateTableIfNeeded(tableName, defaults);
             } else {
-                createNewTable(tableName, defaults);
+                createTable(tableName, defaults);
             }
         }
 
@@ -86,7 +89,7 @@ namespace JSettings {
             return exists;
         }
 
-        void createNewTable(const std::string_view tableName, const ParamsMap_t& defaults) {
+        void createTable(const std::string_view tableName, const ParamsMap_t& defaults) {
             std::stringstream operation;
             operation << "CREATE TABLE " << tableName <<"("
             << "ID INT PRIMARY KEY NOT NULL,"
@@ -109,6 +112,8 @@ namespace JSettings {
         }
 
         void updateTableIfNeeded(const std::string_view tableName, const ParamsMap_t& defaults) {
+
+            // Convert defaultValues to POD entities first
             std::unordered_map<std::string, ParamEntity> entitiesForUpdate;
             auto caller = [](auto& obj) {
                 return ParamTypeConverter::toParamEntity(obj);
@@ -117,22 +122,30 @@ namespace JSettings {
                 entitiesForUpdate[param.first] = std::visit(caller, param.second);
             }
 
-            auto persistentEntities = readAll(tableName);
-            auto paramsInPersistentIter = persistentEntities.begin();
-            while (paramsInPersistentIter != persistentEntities.end()) {
-                if (entitiesForUpdate.contains(paramsInPersistentIter->name)) {
-                    if (entitiesForUpdate[paramsInPersistentIter->name].defaultValue == paramsInPersistentIter->defaultValue) {
-                        entitiesForUpdate.erase(paramsInPersistentIter->name);
+            // Now get existing values from the database and compare them with defaults
+            // because set of parameters may be changed during development
+            std::list<ParamEntity> persistentEntities = readAll(tableName);
+            int maximumExistingId = 0;
+            for (const auto& oldEntity : persistentEntities) {
+                if (entitiesForUpdate.contains(oldEntity.name)) {
+                    if (entitiesForUpdate[oldEntity.name].defaultValue == oldEntity.defaultValue) {
+                        entitiesForUpdate.erase(oldEntity.name);
+                    } else {
+                        entitiesForUpdate[oldEntity.name].id = oldEntity.id;
                     }
+                    maximumExistingId = oldEntity.id;
                 } else {
-                    // Some parameters may be removed from a newer version of default parameters
-                    dao_.remove(tableName, paramsInPersistentIter->name);
+                    // We get here if some parameters are removed from a newer version of default parameters
+                    // thus we need to remove them from the database
+                    dao_.remove(tableName, oldEntity.name);
                 }
-                paramsInPersistentIter++;
             }
 
-            for (const auto entity : entitiesForUpdate) {
-                dao_.createOrUpdateDefaultValue(tableName, entity.second);
+            for (auto& entity : entitiesForUpdate) {
+                if (entity.second.id == -1) {
+                    entity.second.id = ++maximumExistingId;
+                }
+                dao_.createEntryOrUpdateDefaultValue(tableName, entity.second);
             }
         }
 
@@ -141,11 +154,13 @@ namespace JSettings {
                 return ParamTypeConverter::toParamEntity(obj);
             };
 
+            int entityId = FIRST_PARAM_ID;
             for (const auto& entry : defaults) {
                 ParamEntity p = std::visit(
                     caller,
                     entry.second
                 );
+                p.id = entityId++;
                 dao_.create(tableName, p);
             }
         }
