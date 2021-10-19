@@ -1,12 +1,15 @@
 #include <iostream>
 
 #include "Table.hpp"
-#include "table/TableDefaults.hpp"
 
 int main() {
 	
+	std::list<JSettings::ParamVariant_t> parameters {
+		JSettings::Param<int>("MY_INTEGER_PARAM", JSettings::ValueTypes::INTEGER, 5),
+		JSettings::Param<std::string>("MY_STRING_PARAM", JSettings::ValueTypes::STRING, "TCP")
+	};
 	JSettings::Table table(
-		new JSettings::SQLitePersistentTable("parameters.db", "PARAMETERS", JSettings::DEFAULT_PARAMETERS)
+		new JSettings::SQLitePersistentTable("parameters.db", "PARAMETERS", parameters)
 	);
 	table.init();
 	std::cout << table.getValue<int>("MY_INTEGER_PARAM") << std::endl;

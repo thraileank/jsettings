@@ -32,7 +32,7 @@ namespace JSettings {
 
         void createOrUpdateTable(
             const std::string_view tableName,
-            const ParamsMap_t& defaults
+            const std::list<ParamVariant_t>& defaults
         ) {
             if (tableExists(tableName)) {
                 updateTableIfNeeded(tableName, defaults);
@@ -89,7 +89,7 @@ namespace JSettings {
             return exists;
         }
 
-        void createTable(const std::string_view tableName, const ParamsMap_t& defaults) {
+        void createTable(const std::string_view tableName, const std::list<ParamVariant_t>& defaults) {
             std::stringstream operation;
             operation << "CREATE TABLE " << tableName <<"("
             << "ID INT PRIMARY KEY NOT NULL,"
@@ -111,15 +111,15 @@ namespace JSettings {
             }
         }
 
-        void updateTableIfNeeded(const std::string_view tableName, const ParamsMap_t& defaults) {
+        void updateTableIfNeeded(const std::string_view tableName, const std::list<ParamVariant_t>& defaults) {
 
             // Convert defaultValues to POD entities first
             std::unordered_map<std::string, ParamEntity> entitiesForUpdate;
             auto caller = [](auto& obj) {
-                return ParamTypeConverter::toParamEntity(obj);
+                return std::pair(obj.getName(), ParamTypeConverter::toParamEntity(obj));
             };
             for (const auto param : defaults) {
-                entitiesForUpdate[param.first] = std::visit(caller, param.second);
+                entitiesForUpdate.insert(std::visit(caller, param));
             }
 
             // Now get existing values from the database and compare them with defaults
@@ -149,7 +149,7 @@ namespace JSettings {
             }
         }
 
-        void populateTableWithDefaults(const std::string_view tableName, const ParamsMap_t& defaults) {
+        void populateTableWithDefaults(const std::string_view tableName, const std::list<ParamVariant_t>& defaults) {
             auto caller = [](const auto& obj) {
                 return ParamTypeConverter::toParamEntity(obj);
             };
@@ -158,7 +158,7 @@ namespace JSettings {
             for (const auto& entry : defaults) {
                 ParamEntity p = std::visit(
                     caller,
-                    entry.second
+                    entry
                 );
                 p.id = entityId++;
                 dao_.create(tableName, p);

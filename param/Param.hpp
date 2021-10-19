@@ -60,6 +60,10 @@ namespace JSettings {
             return type_;
         }
 
+        std::string getName() const {
+            return name_;
+        }
+
         void debugPrint() const {
             std::cout << "==========================\n"
                 << "SettingsEntity\n"

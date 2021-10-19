@@ -3,20 +3,14 @@
 #include "../PersistentTable.hpp"
 #include "SQLiteAdapter.hpp"
 #include "../ParamTypeConverter.hpp"
-#include "../../TableDefaults.hpp"
 
 namespace JSettings {
     class SQLitePersistentTable : public PersistentTable {
     public:
-        SQLitePersistentTable() : database_("parameters.db") {
-            database_.open();
-            database_.createOrUpdateTable("PARAMETERS", DEFAULT_PARAMETERS);
-        }
-
         SQLitePersistentTable(
             const std::string_view databasePath,
             const std::string_view defaultTableName,
-            const ParamsMap_t defaults
+            const std::list<ParamVariant_t> defaults
         ) : database_(databasePath) {
             database_.open();
             database_.createOrUpdateTable(defaultTableName, defaults);
